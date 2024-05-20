@@ -6,7 +6,7 @@ COPY . .
 
 RUN cargo build --release
 
-FROM debian:stable-slim as prod
+FROM alpine:latest as prod
 WORKDIR /app
 COPY --from=build /build/target/release/health-check .
 
