@@ -1,4 +1,4 @@
-FROM rust:latest as base
+FROM rust:alpine as base
 WORKDIR /build
 
 FROM base as build
