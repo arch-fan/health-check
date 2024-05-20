@@ -21,6 +21,7 @@
       "tamasfe.even-better-toml"
       "serayuzgur.crates"
       "vadimcn.vscode-lldb"
+      "ms-azuretools.vscode-docker"
     ];
     # Enable previews and customize configuration
     previews = {};
