@@ -8,6 +8,6 @@ RUN cargo build --release
 
 FROM debian:stable-slim as prod
 WORKDIR /app
-COPY --from=builder /build/target/release/health-check .
+COPY --from=build /build/target/release/health-check .
 
 CMD ["./health-check"]
