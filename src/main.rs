@@ -21,12 +21,15 @@ fn handle_connection(stream: &mut TcpStream) {
     let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
 
-    let get = b"GET / HTTP/1.1\r\n";
+    let buffer_to_string = String::from_utf8(buffer.to_vec()).unwrap();
+    let parts: Vec<&str> = buffer_to_string.split_whitespace().collect();
 
-    let response = if buffer.starts_with(get) {
-        create_res(StatusCode::Ok, "OK")
-    } else {
-        create_res(StatusCode::NotFound, "Not Found")
+    let response = match parts.get(1) {
+        Some(path) => match *path {
+            "/" => create_res(StatusCode::Ok, "OK"),
+            _ => create_res(StatusCode::NotFound, "Not Found"),
+        },
+        _ => create_res(StatusCode::NotFound, "Not Found"),
     };
 
     stream.write(response.as_bytes()).unwrap();
