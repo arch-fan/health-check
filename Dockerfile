@@ -1,12 +1,9 @@
-FROM rust:alpine as base
+FROM rust:alpine as build
 WORKDIR /build
-
-FROM base as build
 COPY . .
-
 RUN cargo build --release
 
-FROM alpine:latest as prod
+FROM busybox:stable
 WORKDIR /app
 COPY --from=build /build/target/release/health-check .
 
