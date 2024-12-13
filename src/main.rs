@@ -1,58 +1,45 @@
-use std::{
-    env,
-    io::{Read, Write},
-    net::{TcpListener, TcpStream},
-};
+pub mod error;
+pub mod http;
+use std::thread;
+use std::{env, io::Write, net::TcpListener};
+
+use http::common::HttpReqRes;
+use http::method::HttpMethod;
+use http::request::HttpRequest;
+use http::response::HttpResponse;
+use http::status_code::StatusCode;
+
+const IP: &str = "127.0.0.1";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = env::var("PORT").unwrap_or_else(|_| "80".to_string());
     let listener = TcpListener::bind(format!("0.0.0.0:{port}")).unwrap();
-    println!("Listening on http://0.0.0.0:{port}");
+    println!("Listening on http://{IP}:{port}");
 
     for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        handle_connection(&mut stream);
+        if let Ok(mut stream) = stream {
+            thread::spawn(move || {
+                let res = handle_connection(HttpRequest::from(&mut stream));
+
+                if stream.write(res.deserialize().as_slice()).is_err() {
+                    println!("Failed to write to stream");
+                }
+
+                if stream.flush().is_err() {
+                    println!("Failed to flush stream");
+                }
+            });
+        }
     }
 
     Ok(())
 }
 
-fn handle_connection(stream: &mut TcpStream) {
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
-
-    let buffer_to_string = String::from_utf8(buffer.to_vec()).unwrap();
-    let parts: Vec<&str> = buffer_to_string.split_whitespace().collect();
-
-    let response = match parts.get(1) {
-        Some(path) => match *path {
-            "/" => create_res(StatusCode::Ok, "OK"),
-            _ => create_res(StatusCode::NotFound, "Not Found"),
-        },
-        _ => create_res(StatusCode::NotFound, "Not Found"),
-    };
-
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
-}
-
-enum StatusCode {
-    Ok,
-    NotFound,
-}
-
-impl StatusCode {
-    fn value(&self) -> (u16, &str) {
-        match self {
-            StatusCode::Ok => (200, "OK"),
-            StatusCode::NotFound => (404, "NOT FOUND"),
-        }
+fn handle_connection(req: HttpRequest) -> HttpResponse {
+    println!("Request path: {}", req.path);
+    if req.method == HttpMethod::GET && req.path == "/" {
+        HttpResponse::new(StatusCode::Ok)
+    } else {
+        HttpResponse::new(StatusCode::NotFound)
     }
-}
-
-fn create_res(status_code: StatusCode, message: &str) -> String {
-    let (status, msg) = status_code.value();
-    let message_len = message.len();
-
-    format!("HTTP/1.1 {status} {msg}\r\nContent-Length: {message_len}\r\n\r\n{message}")
 }
