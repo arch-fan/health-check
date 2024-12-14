@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn handle_connection(req: HttpRequest) -> HttpResponse {
     println!("Request path: {}", req.path);
-    if req.method == HttpMethod::HEAD && req.path == "/" {
+    if req.path == "/" {
         HttpResponse::new(StatusCode::Ok)
     } else {
         HttpResponse::new(StatusCode::NotFound)
